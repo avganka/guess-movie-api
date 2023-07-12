@@ -8,6 +8,9 @@
     "esModuleInterop": true,
     "allowJs": false,
     "resolveJsonModule": true,
-    "strict": true
-  }
+    "strict": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
 }
