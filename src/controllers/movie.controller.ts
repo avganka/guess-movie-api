@@ -1,13 +1,29 @@
-import {Model} from 'mongoose';
-import {IMovie} from '../types/movie.types';
+import {NextFunction, Request, Response} from 'express';
+import {findMovieById, findMovieByPersonId, findRandomMovie} from '../services/movie.service';
 
-export const getMovie = async (movieModel: Model<IMovie>, id: string): Promise<IMovie | null> => {
-  return movieModel.findById(id);
-};
+export async function getMovie(req: Request, res: Response, next: NextFunction) {
+  try {
+    const movie = await findMovieById(req.params.id);
+    res.json(movie);
+  } catch (error) {
+    next(error);
+  }
+}
 
-export const getMoviesByPersonId = async (
-  movieModel: Model<IMovie>,
-  id: string
-): Promise<IMovie[] | null> => {
-  return movieModel.find({'persons.id': id});
-};
+export async function getRandomMovie(req: Request, res: Response, next: NextFunction) {
+  try {
+    const movie = await findRandomMovie();
+    res.json(movie);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMoviesByPersonId(req: Request, res: Response, next: NextFunction) {
+  try {
+    const movie = await findMovieByPersonId(req.params.personId);
+    res.json(movie);
+  } catch (error) {
+    next(error);
+  }
+}

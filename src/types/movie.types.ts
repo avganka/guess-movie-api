@@ -24,61 +24,68 @@ export interface IMovie extends Document {
   other: IOther;
   media: IMedia;
   relatedMovies: IRelatedMovies[];
-  persons: IPerson[];
+  persons: IShortPerson[];
   updatedAt: string;
 }
 
-export interface ITitle extends Document {
+export interface ITitle {
   russian: string | null;
   english: string | null;
   original: string | null;
 }
 
-export interface ICountry extends Document {
+export interface ICountry {
   id: number;
   name: string;
 }
 
-export interface IBoxOffice extends Document {
+export interface IBoxOffice {
   budget: IBudget;
   worldBox: IBudget;
   marketing: IBudget;
 }
 
-export interface IBudget extends Document {
+export interface IBudget {
   amount: number;
   currency: string;
 }
 
-export interface IRating extends Document {
+export interface IRating {
   imdbRating: number;
   imdbVotes: number;
   kinopoiskRating: number;
   kinopoiskVotes: number;
 }
 
-export interface IOther extends Document {
+export interface IOther {
   isImax: boolean;
   is3d: boolean;
   ageRestriction: string | null;
   mpaaRating: string | null;
 }
 
-export interface IMedia extends Document {
+export interface IMedia {
   trailer: string | null;
   cover: string | null;
   poster: string | null;
 }
 
-export interface IRelatedMovies extends Document {
+export interface IRelatedMovies {
   id: number;
   type: 'Film' | 'TVSeries';
   relationType: 'BEFORE' | 'AFTER';
 }
 
-export interface IPerson extends Document {
+export interface IShortPerson {
   id: number;
-  role: 'ACTOR' | 'VOICEOVER' | 'DIRECTOR' | 'WRITER' | 'PRODUCER' | 'OPERATOR' | 'COMPOSER';
-  name: string;
-  originalName: string;
+  role: IRole;
 }
+
+export type IRole =
+  | 'ACTOR'
+  | 'VOICEOVER'
+  | 'DIRECTOR'
+  | 'WRITER'
+  | 'PRODUCER'
+  | 'OPERATOR'
+  | 'COMPOSER';

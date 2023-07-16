@@ -1,18 +1,10 @@
-import {getMovie, getMoviesByPersonId} from '../controllers/movie.controller';
 import express from 'express';
-import Movie from '../models/movie.model';
-import movieModel from '../models/movie.model';
+import {getMovie, getMoviesByPersonId, getRandomMovie} from '../controllers/movie.controller';
 
 const router = express.Router();
 
-router.get('/:id', async (req, res) => {
-  const movie = await getMovie(Movie, req.params.id);
-  res.json(movie);
-});
-
-router.get('/byPersonId/:id', async (req, res) => {
-  const movies = await getMoviesByPersonId(Movie, req.params.id);
-  res.json({length: movies ? movies.length : 0, movie: movies});
-});
+router.get('/random', getRandomMovie);
+router.get('/byPersonId/:personId', getMoviesByPersonId);
+router.get('/:id', getMovie);
 
 export default router;
