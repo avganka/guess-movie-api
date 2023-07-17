@@ -23,9 +23,10 @@ export interface IMovie extends Document {
   rating: IRating;
   other: IOther;
   media: IMedia;
-  relatedMovies: IRelatedMovies[];
   persons: IShortPerson[];
   updatedAt: string;
+  similarMovies: number[] | IMovie[];
+  relatedMovies: IRelatedMovies[];
 }
 
 export interface ITitle {

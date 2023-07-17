@@ -1,11 +1,6 @@
 import {Schema, model} from 'mongoose';
 import {IMovie} from '../types/movie.types';
 
-//const BudgetSchema = new Schema<IBudget>({
-//  amount: {type: Number, default: null},
-//  currency: {type: String, default: null},
-//});
-
 const MovieSchema = new Schema<IMovie>({
   id: {type: Number, required: true},
   url: {type: String, required: true},
@@ -27,7 +22,7 @@ const MovieSchema = new Schema<IMovie>({
     english: {type: String, default: null},
     original: {type: String, required: true},
   },
-  genres: {type: [Number], required: true},
+  genres: [{type: Number, required: true}],
   countries: [
     {
       id: {type: Number, required: true},
@@ -65,6 +60,12 @@ const MovieSchema = new Schema<IMovie>({
     cover: {type: String, default: null},
     poster: {type: String, default: null},
   },
+  similarMovies: [
+    {
+      type: Number,
+      required: true,
+    },
+  ],
   relatedMovies: [
     {
       id: {type: Number, required: true},
@@ -72,18 +73,26 @@ const MovieSchema = new Schema<IMovie>({
       relationType: {type: String, enum: ['BEFORE', 'AFTER'], required: true},
     },
   ],
-  //persons: {
-  //  ref,
-  //},
-  //persons: {
-  //  id: {type: Number, required: true},
-  //  role: {
-  //    type: String,
-  //    enum: ['ACTOR', 'VOICEOVER', 'DIRECTOR', 'WRITER', 'PRODUCER', 'OPERATOR', 'COMPOSER'],
-  //    required: true,
-  //  },
-  //},
+  persons: [
+    {
+      id: {type: Number, required: true},
+      role: {
+        type: String,
+        enum: ['ACTOR', 'VOICEOVER', 'DIRECTOR', 'WRITER', 'PRODUCER', 'OPERATOR', 'COMPOSER'],
+        required: true,
+      },
+    },
+  ],
   updatedAt: {type: String, required: true},
 });
 
-export default model('movies', MovieSchema);
+//MovieSchema.virtual('similarMoviesDetails', {
+//  ref: 'movies',
+//  localField: 'similarMovies',
+//  foreignField: 'id',
+//});
+
+//MovieSchema.set('toObject', {virtuals: true});
+//MovieSchema.set('toJSON', {virtuals: true});
+
+export const Movie = model('movies', MovieSchema);
