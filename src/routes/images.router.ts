@@ -1,8 +1,9 @@
 import express from 'express';
-import {getMovieImages} from '../controllers/images.controller';
+import {getMovieImages, getRandomImage} from '../controllers/images.controller';
 
 const router = express.Router();
 
+router.get('/random', getRandomImage);
 router.get('/:movieId', getMovieImages);
 
 export default router;
