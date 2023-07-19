@@ -1,205 +1,127 @@
-import Question from '../models/question.model';
-import {Movie} from '../models/movie.model';
-import Person from '../models/person.model';
-import Image from '../models/image.model';
-import {IQuestion} from '../types/questions.types';
+import {IOrderQuestion, IStillQuestion, IVariantOptions} from '../types/questions.types';
 import {
-  findMovieById,
-  findMoviesByPersonId,
-  findMoviePersons,
   findRandomMovie,
   findRelatedMovies,
   findSimilarMovies,
+  findMoviesByGenres,
 } from './movie.service';
 import {IMovie} from '../types/movie.types';
-import {IImage} from '../types/images.types';
-import {findMovieImages, findRandomImage} from './images.service';
-import {getMovieImages} from '../controllers/images.controller';
 import {getRandomNumber} from '../helpers/getRandomNumber';
 import {shuffle} from '../helpers/shuffle';
-import {title} from 'process';
+import {FilterQuery} from 'mongoose';
 
-export async function getQuestion(): Promise<IQuestion[]> {
-  const question = Question.aggregate<IQuestion>([
-    {
-      $sample: {size: 1},
-    },
-  ]);
-
-  return question;
-}
-
-export async function getTest(): Promise<any> {
-  const filter = {
-    'similarMovies.2': {
-      $exists: true,
-    },
+export async function generateStillMovieQuestion(): Promise<IStillQuestion<IMovie>> {
+  // TODO уровни сложности
+  const myFilter: FilterQuery<IMovie> = {
+    'rating.kinopoiskRating': {$gt: 7.5},
+    productionYear: {$gt: 2000},
+    //'persons.id': 7836,
   };
 
-  const count = await Movie.countDocuments(filter);
-  const movie = await Movie.findOne(filter)
-    .skip(getRandomNumber(1, count))
-    .select({id: 1, similarMovies: 1, title: 1})
-    .lean();
+  const filter = {
+    'images.stills.0': {$exists: true},
+    ...myFilter,
+  };
 
-  if (!movie) return null;
-
-  //const similarMovies = await findSimilarMovies(movie.id);
-  //const relatedMovies = await findRelatedMovies(movie.id);
-
-  //const movie = Movie.findOne({id: 301}).populate('similarMoviesDetails');
-
-  return await findMoviePersons(301);
-  //return {
-  //  ...movie,
-  //  similarMovies,
-  //  relatedMovies,
-  //};
-}
-
-export async function generateSimilarMoviesQuestion(): Promise<any> {
-  const image = await findRandomImage();
-  const movie = await findMovieById(image.id);
-
-  if (!movie) throw new Error('Unexpected error');
-
-  const variants: IMovie[] = [];
-
-  const similarMovies = await findSimilarMovies(movie.id);
-  variants.push(...similarMovies);
-
-  if (variants.length < 3) {
-    const relatedMovies = await findRelatedMovies(movie.id);
-    relatedMovies.forEach((m) => {
-      if (!variants.some((variant) => variant.id === m.id || variant.id === movie.id)) {
-        variants.push(m);
-      }
-    });
+  const movie = await findRandomMovie(filter);
+  if (!movie) {
+    return generateStillMovieQuestion();
   }
 
-  if (variants.length < 3) {
-    const personsMovies = await findMoviesByPersonId(movie.persons[0].id);
-    if (personsMovies) {
-      personsMovies.forEach((m) => {
-        if (!variants.some((variant) => variant.id === m.id || variant.id === movie.id)) {
-          variants.push(m);
-        }
-      });
-    }
-  }
+  const image = movie.images.stills[getRandomNumber(0, movie.images.stills.length - 1)];
 
-  if (variants.length < 3) {
-    const newMovie = await findRandomMovie({productionYear: movie.productionYear});
-    if (newMovie) {
-      if (!variants.some((variant) => variant.id === newMovie.id || variant.id === movie.id)) {
-        variants.push(newMovie);
-      }
-    }
-  }
-
-  if (variants.length < 3) {
-    const newMovie = await findRandomMovie({productionYear: movie.productionYear});
-    if (newMovie) {
-      if (!variants.some((variant) => variant.id === newMovie.id || variant.id === movie.id)) {
-        variants.push(newMovie);
-      }
-    }
-  }
-
-  if (variants.length < 3) {
-    const newMovie = await findRandomMovie({productionYear: movie.productionYear});
-    if (newMovie) {
-      if (!variants.some((variant) => variant.id === newMovie.id || variant.id === movie.id)) {
-        variants.push(newMovie);
-      }
-    }
-  }
+  const variants = await generateQuestionVariantsByMovieId(movie.id, {
+    genres: [...movie.genres.slice(0, 2)],
+    countries: [movie.countries[0]],
+    years: [movie.productionYear - 1, movie.productionYear, movie.productionYear + 1],
+  });
 
   return {
+    options: filter,
     answer: movie.id,
     image: image,
     variants: [
-      {id: movie.id, title: movie.title},
-      ...shuffle(
-        variants.map((variant) => ({
-          id: variant.id,
-          title: variant.title,
-        }))
-      ).slice(0, 3),
+      movie,
+      ...shuffle(variants.filter((variant) => variant.id !== movie.id)).slice(0, 3),
     ].sort(() => Math.random() - 0.5),
   };
 }
 
-export async function generateRelatedMoviesQuestion(): Promise<any> {}
+export async function generateQuestionVariantsByMovieId(
+  movieId: number,
+  options: Partial<IVariantOptions>
+) {
+  const genres = options?.genres ? options.genres : [];
+  const years = options?.years ? options.years : [];
+  const countries = options?.countries ? options.countries : [];
+
+  const filter = {
+    $and: [
+      ...genres.map((genre: number) => ({genres: genre})),
+      ...countries.map((country: any) => ({'countries.id': country.id})),
+      {$or: [...years.map((year: any) => ({productionYear: year}))]},
+    ],
+  };
+
+  const variants: IMovie[] = [];
+
+  const similarMovies = await findSimilarMovies(movieId);
+  const relatedMovies = await findRelatedMovies(movieId);
+  //const personsMovies = await findMoviesByPersonId(movie.persons[0].id);
+
+  const similarMoviesByFilter = await findMoviesByGenres(filter);
+
+  variants.push(...similarMovies, ...relatedMovies, ...(similarMoviesByFilter || []));
+
+  while (variants.length < 4) {
+    const newMovie = await findRandomMovie(filter);
+    if (newMovie) {
+      variants.push(newMovie);
+    }
+  }
+
+  return variants.filter((item, index) => {
+    return variants.indexOf(item) === index;
+  });
+}
+
+export async function generateMoviesOrderQuestion(): Promise<IOrderQuestion<IMovie>> {
+  const myFilter: FilterQuery<IMovie> = {
+    //'rating.kinopoiskRating': {$gt: 7.5},
+    //productionYear: {$gt: 2000},
+    //'persons.id': 7836,
+  };
+
+  const filter = {
+    'images.stills.0': {$exists: true},
+    'relatedMovies.2': {$exists: true},
+    ...myFilter,
+  };
+
+  const movie = await findRandomMovie(filter);
+  if (!movie) {
+    return generateMoviesOrderQuestion();
+  }
+
+  const image = movie.images.stills[getRandomNumber(0, movie.images.stills.length - 1)];
+
+  const variants = await generateQuestionVariantsByMovieId(movie.id, {
+    genres: [...movie.genres.slice(0, 2)],
+    countries: [movie.countries[0]],
+    years: [movie.productionYear - 1, movie.productionYear, movie.productionYear + 1],
+  });
+
+  return {
+    options: filter,
+    answer: [movie.id],
+    image: [image],
+    variants: [
+      movie,
+      ...shuffle(variants.filter((variant) => variant.id !== movie.id)).slice(0, 3),
+    ].sort(() => Math.random() - 0.5),
+  };
+}
 
 export async function generateMoviePersosnQuestion(): Promise<any> {}
 
-//export async function generateDescriptionQuestion(): Promise<any> {}
-
-//export async function generateSimilarMoviesQuestion(): Promise<any> {
-//  const image = await findRandomImage();
-//  const movie = await findMovieById(image.id);
-
-//  if (!movie) throw new Error('Unexpected error');
-
-//  const variants: IMovie[] = [];
-//  let isRelatedDownload = false;
-
-//  const similarMovies = await findSimilarMovies(movie.id);
-//  similarMovies.forEach((movie) => {
-//    if (!variants.some((variant) => variant.id === movie.id)) {
-//      variants.push(movie);
-//    }
-//  });
-
-//  let i = 0;
-
-//  while (variants.length < 3) {
-//    console.log(variants.length);
-//    if (!isRelatedDownload) {
-//      const relatedMovies = await findRelatedMovies(movie.id);
-//      relatedMovies.forEach((movie) => {
-//        if (!variants.some((variant) => variant.id === movie.id)) {
-//          variants.push(movie);
-//        }
-//      });
-//      isRelatedDownload = true;
-//    }
-
-//    if (variants.length >= 3) break;
-
-//    if (movie.persons.length !== 0) {
-//      const newMovie = await findRandomMovie({'persons.id': movie.persons[0].id});
-//      if (
-//        newMovie &&
-//        !variants.some((variant) => variant.id === newMovie.id && movie.id === newMovie.id)
-//      ) {
-//        variants.push(newMovie);
-//      }
-//      continue;
-//    }
-//    const randomMovie = await findRandomMovie({productionYear: movie.productionYear});
-//    if (
-//      randomMovie &&
-//      !variants.some((variant) => variant.id === randomMovie.id && movie.id === randomMovie.id)
-//    ) {
-//      variants.push(randomMovie);
-//    }
-
-//    i++;
-//  }
-
-//  return {
-//    answer: movie.id,
-//    image: image,
-//    variants: [
-//      {id: movie.id, title: movie.title},
-//      ...shuffle(
-//        variants.map((variant) => ({
-//          id: variant.id,
-//          title: variant.title,
-//        }))
-//      ).slice(0, 3),
-//    ].sort(() => Math.random() - 0.5),
-//  };
-//}
+export async function generateDescriptionQuestion(): Promise<any> {}

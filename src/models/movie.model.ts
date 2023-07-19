@@ -84,6 +84,35 @@ const MovieSchema = new Schema<IMovie>({
     },
   ],
   updatedAt: {type: String, required: true},
+  images: {
+    stills: [
+      {
+        id: {type: Number, required: true},
+        type: {type: String, enum: ['STILL', 'SCREENSHOT', ' CONCEPT'], required: true},
+        imageUrl: {type: String, required: true},
+        width: {type: Number, required: true},
+        height: {type: Number, required: true},
+      },
+    ],
+    screenshots: [
+      {
+        id: {type: Number, required: true},
+        type: {type: String, enum: ['STILL', 'SCREENSHOT', ' CONCEPT'], required: true},
+        imageUrl: {type: String, required: true},
+        width: {type: Number, required: true},
+        height: {type: Number, required: true},
+      },
+    ],
+    concepts: [
+      {
+        id: {type: Number, required: true},
+        type: {type: String, enum: ['STILL', 'SCREENSHOT', ' CONCEPT'], required: true},
+        imageUrl: {type: String, required: true},
+        width: {type: Number, required: true},
+        height: {type: Number, required: true},
+      },
+    ],
+  },
 });
 
 //MovieSchema.virtual('similarMoviesDetails', {

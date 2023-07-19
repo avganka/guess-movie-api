@@ -1,12 +1,13 @@
 import {IMovie} from '../types/movie.types';
 import {Movie} from '../models/movie.model';
 import {getRandomNumber} from '../helpers/getRandomNumber';
+import {FilterQuery} from 'mongoose';
 
 export async function findMovieById(id: string | number): Promise<IMovie | null> {
   return await Movie.findOne({id: Number(id)});
 }
 
-export async function findRandomMovie(filter?: Record<string, any>): Promise<IMovie | null> {
+export async function findRandomMovie(filter?: FilterQuery<IMovie>): Promise<IMovie | null> {
   //return Movie.aggregate([{$sample: {size: 1}}]);
 
   //const currentYear = DateTime.local().year;
@@ -159,4 +160,10 @@ export async function findMoviePersons(movieId: string | number): Promise<IMovie
   ]);
   if (!movie) return null;
   return movie[0].persons;
+}
+
+export async function findMoviesByGenres(filter: FilterQuery<IMovie>): Promise<IMovie[] | null> {
+  const movies = await Movie.find(filter);
+
+  return movies;
 }

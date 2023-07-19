@@ -1,6 +1,7 @@
 import {IImages} from '../types/images.types';
 import Images from '../models/image.model';
 import {getRandomNumber} from '../helpers/getRandomNumber';
+import {FilterQuery} from 'mongoose';
 
 export async function findMovieImages(id: string | number): Promise<IImages | null> {
   console.log(id);
@@ -9,8 +10,12 @@ export async function findMovieImages(id: string | number): Promise<IImages | nu
   return images;
 }
 
-export async function findRandomImage(): Promise<any> {
-  const filter = {'stills.0': {$exists: true}};
+export async function findRandomImage(filterQuery?: FilterQuery<IImages>): Promise<any> {
+  const filter = {
+    'stills.0': {$exists: true},
+    ...filterQuery,
+  };
+
   const count = await Images.countDocuments(filter);
   const images = await Images.findOne(filter).skip(getRandomNumber(1, count)).lean();
 

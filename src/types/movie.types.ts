@@ -1,4 +1,5 @@
 import {Document} from 'mongoose';
+import {IImage} from './images.types';
 
 export interface IMovie extends Document {
   id: number;
@@ -27,6 +28,11 @@ export interface IMovie extends Document {
   updatedAt: string;
   similarMovies: number[] | IMovie[];
   relatedMovies: IRelatedMovies[];
+  images: {
+    stills: IImage[];
+    screenshots: IImage[];
+    concepts: IImage[];
+  };
 }
 
 export interface ITitle {

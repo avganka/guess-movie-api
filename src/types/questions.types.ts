@@ -1,19 +1,22 @@
-import {IGenre} from './genres.types';
+import {FilterQuery} from 'mongoose';
 import {IImage} from './images.types';
-import {ICountry, IMedia, IRating, ITitle} from './movie.types';
+import {ICountry} from './movie.types';
 
-export interface IQuestion {
-  id: number;
-  title: ITitle;
-  rating: IRating;
-  genres: IGenre;
-  media: IMedia;
+export interface IVariantOptions {
+  genres: number[];
+  years: number[];
   countries: ICountry[];
-  similarMovies: SimilarMovie[];
-  stills: IImage[];
-  screenshots: IImage[];
+}
+interface IQuestion<T> {
+  options: FilterQuery<T>;
+  variants: T[];
 }
 
-interface SimilarMovie {
-  title: ITitle;
+export interface IStillQuestion<T> extends IQuestion<T> {
+  answer: number;
+  image?: IImage;
+}
+export interface IOrderQuestion<T> extends IQuestion<T> {
+  answer: number[];
+  image?: IImage[];
 }
